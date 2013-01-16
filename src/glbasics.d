@@ -5,24 +5,48 @@ import nucleus.gui.glwindow;
 import std.stdio;
 import core.runtime;
 
+import nucleus.gl.glcolors;
+
 void main( string[] args ) {
-  auto wnd = new GLWindow( "OpenGL Basics", false );
+  auto wnd = new GLWindow( "OpenGL Basics" );
   auto ctx = wnd.glContext();
   ctx.loadAll();
 
   GLint noExt = -1;
   ctx.glGetIntegerv( GL_NUM_EXTENSIONS, &noExt );    
   writeln( "Number of extensions: ", noExt );  
-  foreach( err; GLErrors( ctx ) ) {
-    writeln( err.glError );
-  }
+  
   GLint major, minor;
   ctx.glGetIntegerv( GL_MAJOR_VERSION, &major );
   ctx.glGetIntegerv( GL_MINOR_VERSION, &minor );
   writeln( "Version ", major, ".", minor );
   
+  auto colors = GLColors();
+  wnd.onResize = ( size_t width, size_t height ) { ctx.glViewport( 0, 0, width, height ); };
+  wnd.onRender = 
+    () { 
+      auto c = colors.front;
+      colors.popFront();
+      ctx.glClearColor( c.red, c.green, c.blue, c.alpha ); 
+      ctx.glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
+      printErrors( ctx );
+    };  
+  
   wnd.show();
   wnd.listen();
+}
+
+struct GLColors {
+  size_t _index = 0;
+  @property bool empty() { return false; }
+  @property GLColor front() { return composites[ _index ]; }
+  void popFront() { if( _index == composites.length - 1 ) { _index = 0; } else { ++_index; } }
+}
+
+void printErrors( ref GLContext ctx ) {
+  foreach( err; GLErrors( ctx ) ) {
+    writeln( err.glError );
+  }
 }
 
 string glError( GLenum errCode ) {  
