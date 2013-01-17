@@ -1,6 +1,10 @@
 module glbasics;
 
 import nucleus.gui.glwindow;
+import nucleus.gui.listeners.keyboard;
+import nucleus.gui.listeners.mouse;
+import nucleus.input.keyboard;
+import nucleus.input.mouse;
 
 import std.stdio;
 import core.runtime;
@@ -26,12 +30,12 @@ void main( string[] args ) {
   wnd.onRender = 
     () { 
       auto c = colors.front;
-      colors.popFront();
       ctx.glClearColor( c.red, c.green, c.blue, c.alpha ); 
       ctx.glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
       printErrors( ctx );
-    };  
-  
+    };
+  wnd.keyboardListener = new SimplePressedKeysListener( ( Key k ) { if( k == Key.space ) { colors.popFront(); wnd.update(); } }  );  
+  wnd.mouseListener = new SimpleMouseClickListener( ( Button b, int x, int y ) { if( b == Button.left ) { colors.popFront(); wnd.update(); } } );
   wnd.show();
   wnd.listen();
 }
