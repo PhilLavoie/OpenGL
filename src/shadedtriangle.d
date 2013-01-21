@@ -5,6 +5,8 @@ import nucleus.gl.glcolors;
 import nucleus.gl.glerrors;
 import nucleus.gl.shaders;
 
+import nucleus.rendering.primitives;
+
 import std.stdio;
 import File = std.file;
 import std.utf;
@@ -21,8 +23,9 @@ void main( string[] args ) {
   pm.buildAll();
   scope( exit ) { pm.releaseAll(); }
   
-  pm.use!( StockProgram.gradient );
-    
+  auto program = pm.select!( StockProgram.gradient )();
+
+  /+
   float[] triangleVertices = 
     [ 
       -.75f, -.75f, 0.0f, 1.0f,
@@ -48,7 +51,44 @@ void main( string[] args ) {
   ctx.glBindBuffer( GL_ARRAY_BUFFER, colorBO );
   ctx.glBufferData( GL_ARRAY_BUFFER, triangleColors.length * float.sizeof, triangleColors.ptr, GL_STATIC_DRAW );
   ctx.glBindBuffer( GL_ARRAY_BUFFER, 0 );
-       
+  +/
+  
+  alias VertexType = Vertex!( VertexColor.yes, VertexNormal.no );
+  alias TriangleType = Triangle!VertexType;
+  
+  /* auto triangle = 
+    TriangleType(
+      VertexType(
+        Coordinates( -.75f, -.75f, 0.0f, 1.0f ),
+        Color( blue.red, blue.green, blue.blue, blue.alpha )
+      ),
+      VertexType(
+        Coordinates( 0.75f, -.75f, 0.0f, 1.0f, ),
+        Color( green.red, green.green, green.blue, green.alpha )
+      ),
+      VertexType(
+        Coordinates( 0.0f, 0.75f, 0.0f, 1.0f ),
+        Color( yellow.red, yellow.green, yellow.blue, yellow.alpha )
+      )
+    ); */
+  
+  program.setVerticesData( 
+    TriangleType(
+      VertexType(
+        Coordinates( -.75f, -.75f, 0.0f, 1.0f ),
+        Color( blue.red, blue.green, blue.blue, blue.alpha )
+      ),
+      VertexType(
+        Coordinates( 0.75f, -.75f, 0.0f, 1.0f, ),
+        Color( green.red, green.green, green.blue, green.alpha )
+      ),
+      VertexType(
+        Coordinates( 0.0f, 0.75f, 0.0f, 1.0f ),
+        Color( yellow.red, yellow.green, yellow.blue, yellow.alpha )
+      )
+    )
+  );
+    
   printErrors( ctx );
   
   wnd.onResize = 
@@ -61,6 +101,9 @@ void main( string[] args ) {
         glClearColor( black.red, black.green, black.blue, 0 ); 
         glClear( GL_COLOR_BUFFER_BIT  );  
         
+        program.execute();
+        printErrors( ctx );
+        /+
         glEnableVertexAttribArray( vertexPos );
         glBindBuffer( GL_ARRAY_BUFFER, vertexBO );      
         glVertexAttribPointer(
@@ -87,12 +130,11 @@ void main( string[] args ) {
         glDrawArrays( GL_TRIANGLES, 0, 3 );     
         glDisableVertexAttribArray( vertexPos );
         glDisableVertexAttribArray( colorPos );
+        +/
       }
     };  
   
   wnd.show();
-  wnd.listen();
-  ctx.glDeleteBuffers( 1, &vertexBO );
-  ctx.glDeleteBuffers( 1, &colorBO );
+  wnd.listen();  
 }
 
